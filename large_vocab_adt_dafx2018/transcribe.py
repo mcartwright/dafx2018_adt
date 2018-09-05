@@ -19,10 +19,7 @@ def transcribe(model_definition_path,
                input_audio_file,
                model_configuration_id,
                sample_audio_files,
-               plot=False,
                synthesize=False,
-               display_start=0,
-               display_stop=500,
                peak_params=None,
                output_sample_rate=44100):
     """
@@ -55,14 +52,8 @@ def transcribe(model_definition_path,
         'claps',
         'bells',
         'claves']
-    plot : bool
-        If True, plot output. Default is False.
     synthesize : bool
         Synthesize audio using `sample_audio_files`
-    display_start : int
-        The step index to start display when plotting.
-    display_stop : int
-        The step index to stop display when plotting.
     peak_params : dict
         Dictionary of peak picking parameters. See `librosa.util.peak_pick`.
         Defaults to
@@ -93,51 +84,12 @@ def transcribe(model_definition_path,
 
     mdl.load_weights(model_weights_path)
 
-    mn = str(model_configuration_id)
     cfg = init_model_config(model_configuration_id)
 
     ms_input_array, os_input_array, sr = extract_features(input_audio_file)
 
     y_hat = mdl.predict([np.array([ms_input_array, ]),
                          np.array([os_input_array, ]), ])
-
-    if plot:
-        import matplotlib.pyplot as plt
-
-        x1 = np.squeeze(ms_input_array, 2)
-        x2 = np.squeeze(os_input_array, 2)
-
-        y_hat1 = np.squeeze(y_hat[0], 0)
-        y_hat2 = np.squeeze(y_hat[1], 0)
-        y_hat3 = np.squeeze(y_hat[2], 0)
-
-        plt.figure(figsize=(15, 2.5 * 5))
-        plt.subplot(5, 1, 1)
-        plt.imshow(x1[display_start:display_stop, :].T, aspect='auto', origin='lower', interpolation='none')
-        plt.xticks([])
-        plt.title('{} X1'.format(mn))
-        plt.colorbar()
-        plt.subplot(5, 1, 2)
-        plt.imshow(x2[display_start:display_stop, :].T, aspect='auto', origin='lower', interpolation='none')
-        plt.xticks([])
-        plt.title('{} X2'.format(mn))
-        plt.colorbar()
-        plt.subplot(5, 1, 3)
-        plt.imshow(y_hat1[display_start:display_stop, :].T, aspect='auto', origin='lower', interpolation='none')
-        plt.xticks([])
-        plt.title('{} Y1_hat'.format(mn))
-        plt.colorbar()
-        plt.subplot(5, 1, 4)
-        plt.imshow(y_hat2[display_start:display_stop, :].T, aspect='auto', origin='lower', interpolation='none')
-        plt.title('{} Y2_hat'.format(mn))
-        plt.colorbar()
-        plt.xticks([])
-        plt.subplot(5, 1, 5)
-        plt.imshow(y_hat3[display_start:display_stop, :].T, aspect='auto', origin='lower', interpolation='none')
-        plt.title('{} Y3_hat'.format(mn))
-        plt.colorbar()
-        plt.xticks([])
-        plt.show()
 
     if peak_params is None:
         peak_params = dict(pre_max=2,
@@ -188,6 +140,7 @@ def transcribe(model_definition_path,
             mixed, unmixed = None, None
         output[name] = dict(mixed_audio=mixed,
                             unmixed_audio=unmixed,
-                            onset_activations=y_hat_full)
+                            onset_activations=y_hat_full,
+                            jam=jam)
 
     return output
